@@ -6,7 +6,7 @@
 static float
 __relu__(float x)
 {
-    return x > 0 ? x : 0;
+    return x > 0.0f ? x : 0.0f;
 
 }
 
@@ -14,11 +14,11 @@ __relu__(float x)
 static float 
 __relu_derivative__(float x)
 {
-    return 0;
+    return 0.0f;
 }
 
 
-#define __sigmoid_exp__(x)(1 / (1 + exp(-x)))
+#define __sigmoid_exp__(x)(1.0f / (1.0f + exp(-x)))
 
 
 static float 
@@ -31,7 +31,7 @@ __sigmoid__(float x)
 static float
 __sigmoid_derivative__(float x)
 {
-    return __sigmoid_exp__(x) * (1 - __sigmoid_exp__(x));
+    return __sigmoid_exp__(x) * (1.0f - __sigmoid_exp__(x));
 }
 
 

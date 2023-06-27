@@ -4,12 +4,14 @@
 
 #include <stddef.h>
 
-typedef float
-(*Loss)(size_t, float *, float *);
+
+typedef struct
+{
+    float (*error)(size_t, float *, float *);
+    float (*error_prime)(size_t, float*, float*);
+}Loss;
 
 
-float
-mse(size_t length, float * y, float * labels);
-
+extern const Loss mse;
 
 #endif

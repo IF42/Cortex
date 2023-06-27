@@ -4,8 +4,8 @@
 
 typedef struct
 {
-    float (*activation)(float);
-    float (*derivative)(float);
+    float (*act)(float);
+    float (*prime)(float);
 }Activation;
 
 

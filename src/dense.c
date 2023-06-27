@@ -18,7 +18,7 @@ __forward__(
         for(size_t j = 0; j < self->neurons[i]->n_inputs; j++)
             LAYER(self)->output[i] += self->neurons[i]->weights[j] * input[j];
 
-        LAYER(self)->output[i] = LAYER(self)->activation.activation(LAYER(self)->output[i]);
+        LAYER(self)->output[i] = LAYER(self)->activation.act(LAYER(self)->output[i]);
     }
 }
 
@@ -26,10 +26,19 @@ __forward__(
 static void
 __backward__(
     Dense * self
-    , float * output_gradient
+    , float * input
+    , float * target
     , float rate)
 {
+    __forward__(self, input);
 
+    float error = 0;
+
+    for(size_t i = 0; i < LAYER(self)->n_neurons; i ++)
+    {
+        for(size_t j = 0; j < self->neurons[i]->n_inputs; j++)
+            error += target[i]  
+    }
 }
 
 

@@ -1,22 +1,31 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <math.h>
 
 #include "../src/loss.h"
 #include "../src/dense.h"
 
+#define Layers(...)                                                     \
+    union                                                               \
+    {                                                                   \
+        struct _layers                                                  \
+        {                                                               \
+            __VA_ARGS__                                                 \
+        }layers;                                                        \
+                                                                        \
+        Layer * iterator[sizeof(struct _layers)/sizeof(void*)];         \
+    };
 
-typedef union
+
+typedef struct
 {
-    struct
-    {
-        Dense * l1;
-    }layers;
-
-    Layer * iterator[1];
+    Loss loss;
+    Layers(Dense * l1;)
 }Model;
 
-#define Model(...) (Model){{__VA_ARGS__}}
+
+#define Model(...) (Model){__VA_ARGS__}
 #define SIZE(iterator)(sizeof(iterator)/sizeof(void*))
 
 
@@ -54,18 +63,27 @@ evaluate(Model * self, float * inputs)
 
 
 static inline float
-backward(Model * self, float rate, float * X, float * y)
+backward(
+    Model * self
+    , float rate
+    , size_t length
+    , float * X
+    , float * y)
 {
-    forward(self, X);
+    float error = 0;
 
-    float error = 
-        mse(LAYER(self->layers.l1)->n_neurons
-                , LAYER(self->layers.l1)->output
-                , y);
+    for(size_t i = 0; i < length; i ++)
+    {
+        forward(self, &X[i * 2]);
+        
+        for(size_t j = 0; j < LAYER(self->layers.l1)->n_neurons; j++)
+            error += pow(y[i * LAYER(self->layers.l1)->n_neurons + j] - LAYER(self->layers.l1)->output[j], 2);
 
-    self->layers.l1->neurons[0]->weights[0] -= rate;
-    self->layers.l1->neurons[0]->weights[1] -= rate;
-    self->layers.l1->neurons[0]->bias -= rate;
+        self->layers.l1->neurons[0]->weights[0] += rate;
+        self->layers.l1->neurons[0]->weights[1] += rate;
+        self->layers.l1->neurons[0]->bias += rate;
+    }
+
 
     return error;
 }
@@ -90,7 +108,7 @@ main(void)
     ** prepare model
     */
     Model sequential = 
-        Model(dense_new(2, 1, sigmoid));
+        Model(.loss = mse, .layers={dense_new(2, 1, sigmoid)});
 
     /*
     ** prepare test input
@@ -105,10 +123,10 @@ main(void)
     /*
     ** show output layer
     */
-    for(size_t i = 0; i < 3000; i++)
+    for(size_t i = 0; i < 30; i++)
     {
         float *output = evaluate(&sequential, &X[1][0]);
-        float error = backward(&sequential, 0.01, &X[1][0], &y[1][0]);
+        float error = backward(&sequential, 0.01, 4, X, y);
 
         show_output(1, output);
         printf(" loss: %f\n", error);
