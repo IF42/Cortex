@@ -12,7 +12,8 @@ typedef struct
 {
     Layer super;
 
-    Neuron * neurons[];    
+    size_t n_inputs;
+    float weights[];
 }Dense;
 
 

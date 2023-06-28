@@ -1,152 +1,89 @@
 #include <stdio.h>
 #include <stdlib.h>
-#include <string.h>
 #include <math.h>
 
-#include "../src/loss.h"
-#include "../src/dense.h"
 
-#define Layers(...)                                                     \
-    union                                                               \
-    {                                                                   \
-        struct _layers                                                  \
-        {                                                               \
-            __VA_ARGS__                                                 \
-        }layers;                                                        \
-                                                                        \
-        Layer * iterator[sizeof(struct _layers)/sizeof(void*)];         \
-    };
+float input[][2] = {{0,0}, {0,1}, {1,0}, {1,1}};
+float output[][1] = {{0}, {0}, {0}, {1}};
+
+#define SIZE sizeof(input)/sizeof(input[0])
 
 
-typedef struct
+float 
+sigmoid(float x)
 {
-    Loss loss;
-    Layers(Dense * l1;)
-}Model;
+    return 1/(1 + expf(-x));
+}
 
-
-#define Model(...) (Model){__VA_ARGS__}
-#define SIZE(iterator)(sizeof(iterator)/sizeof(void*))
-
-
-static inline void *
-memdup(void * src, size_t len)
+float 
+relu(float x)
 {
-    void * dest = malloc(len);
-    memcpy(dest, src, len);
-
-    return dest;
+    if(x > 0)
+        return x;
+    else
+        return 0;
 }
 
 
-static inline void
-forward(Model * self, float * inputs)
+float 
+forward(float in1, float in2, float w1, float w2, float b)
 {
-    for(size_t i = 0; i < SIZE(self->iterator); i++)
-    {
-        if(i == 0)
-            layer_forward(self->iterator[i], inputs);
-        else
-            layer_forward(self->iterator[i], self->iterator[i-1]->output);
-    }
-}
-
-static inline float *
-evaluate(Model * self, float * inputs)
-{
-    forward(self, inputs);
-
-    return memdup(
-            LAYER(self->layers.l1)->output
-            , sizeof(float)*LAYER(self->layers.l1)->n_neurons);
+    return sigmoid((w1*in1) + (w2 * in2) + b);
 }
 
 
-static inline float
-backward(
-    Model * self
-    , float rate
-    , size_t length
-    , float * X
-    , float * y)
+float
+loss(float w1, float w2, float b)
 {
     float error = 0;
 
-    for(size_t i = 0; i < length; i ++)
-    {
-        forward(self, &X[i * 2]);
-        
-        for(size_t j = 0; j < LAYER(self->layers.l1)->n_neurons; j++)
-            error += pow(y[i * LAYER(self->layers.l1)->n_neurons + j] - LAYER(self->layers.l1)->output[j], 2);
+    for(size_t i = 0; i < SIZE; i++)
+        error += powf(output[i][0] - forward(input[i][0], input[i][1], w1, w2, b), 2);
 
-        self->layers.l1->neurons[0]->weights[0] += rate;
-        self->layers.l1->neurons[0]->weights[1] += rate;
-        self->layers.l1->neurons[0]->bias += rate;
-    }
-
-
-    return error;
-}
-
-
-static inline void
-show_output(size_t length, float * output)
-{
-    printf("{");
-
-    for(size_t i = 0; i < length; i++)
-        printf(i == 0 ? "%f" : ", %f", output[i]);
-    
-    printf("}");
+    return error/SIZE;
 }
 
 
 int
 main(void)
-{
-    /*
-    ** prepare model
-    */
-    Model sequential = 
-        Model(.loss = mse, .layers={dense_new(2, 1, sigmoid)});
-
-    /*
-    ** prepare test input
-    */
-    float X[][2] = {{0,0}, {0,1}, {1,0}, {1,1}};
-    float y[][1] = {{0}, {1}, {1}, {1}};
-
-    /*
-    ** fit input data
-    */
+{   
+    srand(69);
     
-    /*
-    ** show output layer
-    */
-    for(size_t i = 0; i < 30; i++)
+    float w1 = (float) rand() / (float)RAND_MAX;
+    float w2 = (float) rand() / (float)RAND_MAX;
+    float b  = (float) rand() / (float)RAND_MAX;
+
+    printf("w1: %f, w2: %f, b:%f, loss: %f\n", w1, w2, b, loss(w1, w2, b)); 
+
+    float delta = 0.00001;
+    float rate  = 1;
+
+    for(size_t i = 0; i < 3000000; i ++)
     {
-        float *output = evaluate(&sequential, &X[1][0]);
-        float error = backward(&sequential, 0.01, 4, X, y);
+        float error = loss(w1, w2, b);
+ 
+        float dw1 = (loss(w1+delta, w2, b) - error) / delta;
+        float dw2 = (loss(w1, w2+delta, b) - error) / delta;
+        float db  = (loss(w1, w2, b+delta) - error) / delta;
 
-        show_output(1, output);
-        printf(" loss: %f\n", error);
+        w1 -= rate * dw1;
+        w2 -= rate * dw2;
+        b  -= rate * db; 
 
-        free(output);
-
-        if(error < 0.000001)
-            break;
+        printf("w1: %f, w2: %f, b:%f, loss: %f\n", w1, w2, b, loss(w1, w2, b)); 
     }
 
-    /*
-    ** release resources
-    */
-    for(size_t i = 0; i < SIZE(sequential.iterator); i++)
-        layer_delete(sequential.iterator[i]);
+    printf("\n");
 
-    printf("Program exit...\n");
+    for(float i = 0; i < 2; i ++)
+    {
+        for(float j = 0; j < 2; j ++)
+            printf("%d | %d = %f\n", (int) i, (int) j, forward(i, j, w1, w2, b));
+    }
 
     return EXIT_SUCCESS;
 }
+
 
 
 

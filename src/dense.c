@@ -64,7 +64,9 @@ dense_new(
     , size_t n_neurons
     , Activation activation)
 {
-    Dense * self = malloc(sizeof(Dense) + (sizeof(Neuron*) * n_neurons)); 
+    
+    size_t parameters = n_inputs + (n_neurons * 2);
+    Dense * self = malloc(sizeof(Dense) + (sizeof(float) * parameters)); 
 
     if(self != NULL)
     {
