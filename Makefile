@@ -11,13 +11,10 @@ CACHE=.cache
 OUTPUT=$(CACHE)/release
 
 MODULES += main.o
-#MODULES += neuron.o
-#MODULES += layer.o
-#MODULES += dense.o
-#MODULES += model.o
-#MODULES += sequential.o
-#MODULES += activation.o
-#MODULES += loss.o
+MODULES += layer.o
+MODULES += dense.o
+MODULES += activation.o
+MODULES += loss.o
 
 
 OBJ=$(addprefix $(CACHE)/,$(MODULES))

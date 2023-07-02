@@ -1,5 +1,5 @@
 #ifndef _ACTIVATION_H_
-#define _ACTIVATION_H_ 
+#define _ACTIVATION_H_
 
 
 typedef struct
@@ -9,8 +9,9 @@ typedef struct
 }Activation;
 
 
-extern const Activation relu;
-extern const Activation sigmoid;
-
+extern const Activation Linear;
+extern const Activation Sigmoid;
+extern const Activation ReLU;
+extern const Activation TanH;
 
 #endif

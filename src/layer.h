@@ -3,58 +3,59 @@
 
 #include "activation.h"
 
-#include <stddef.h>
 
 typedef struct Layer Layer;
 
-
-typedef void
-(*LayerForward)(
-    Layer * self
-    , float * input);
+typedef float *
+(*LayerForwardCallback)(Layer *, float *);
 
 
-typedef void
-(*LayerBackward)(
-    Layer * self
-    , float * output_gradient
-    , float rate);
+typedef float *
+(*LayerBackwardCallback)(Layer *, float, float *, float *);
 
 
 typedef void
-(*LayerDelete)(Layer * self);
+(*LayerBackward_Ptr_Callback)(Layer *, float, float **, float **);
 
 
-#define LAYER(T)((Layer *)T)
+
+
+typedef void
+(*LayerDeleteCallback)(Layer *);
 
 
 struct Layer
 {
-    LayerForward forward;
-    LayerBackward backward;
-    Activation activation;
-    LayerDelete delete;
+    LayerForwardCallback forward;
+    LayerBackwardCallback backward;
+    LayerDeleteCallback delete;
 
-    size_t n_neurons;
+    Activation activation;
+
     float * output;
+    float * gradient;
 };
 
 
-
-void
+float *
 layer_forward(
     Layer * self
-    , float * input);
+    , float * X);
 
 
-void
+float *
 layer_backward(
     Layer * self
-    , float * output_gradient
-    , float rate);
+    , float rate
+    , float * y
+    , float * gradient);
 
 
 void
 layer_delete(Layer * self);
 
+
 #endif
+
+
+

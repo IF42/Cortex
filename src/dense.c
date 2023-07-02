@@ -1,97 +1,83 @@
 #include "dense.h"
 
+#include <math.h>
 #include <stdlib.h>
-#include <assert.h>
-#include <time.h>
-#include <stdio.h>
 
 
-static void
+static float *
 __forward__(
     Dense * self
-    , float * input)
+    , float * X)
 {
-    for(size_t i = 0; i < LAYER(self)->n_neurons; i ++)
+    for(size_t i = 0; i < self->neurons; i++)
     {
-        LAYER(self)->output[i] = self->neurons[i]->bias;
-        
-        for(size_t j = 0; j < self->neurons[i]->n_inputs; j++)
-            LAYER(self)->output[i] += self->neurons[i]->weights[j] * input[j];
+        self->super.output[i] = self->bias[i];
 
-        LAYER(self)->output[i] = LAYER(self)->activation.act(LAYER(self)->output[i]);
+        for(size_t j = 0; j < self->inputs; j++)
+            self->super.output[i] += self->weight[(i * self->inputs) + j] * X[j];
+
+        self->super.output[i] = self->super.activation.act(self->super.output[i]);
     }
+
+    return self->super.output;
 }
 
+#include <stdio.h>
 
-static void
+static float *
 __backward__(
     Dense * self
-    , float * input
-    , float * target
-    , float rate)
+    , float rate
+    , float * y
+    , float * input_gradient)
 {
-    __forward__(self, input);
-
-    float error = 0;
-
-    for(size_t i = 0; i < LAYER(self)->n_neurons; i ++)
+    for (size_t i = 0; i < self->neurons; i++) 
     {
-        for(size_t j = 0; j < self->neurons[i]->n_inputs; j++)
-            error += target[i]  
+        float gradient = input_gradient[i] * self->super.activation.prime(self->super.output[i]);
+        self->super.gradient[i] = gradient;
+        
+        for (size_t j = 0; j < self->inputs; j++) 
+            self->weight[(i * self->inputs) + j] -= rate * gradient * y[i];
+        
+        self->bias[i] -= rate * gradient; 
     }
-}
 
-
-static void
-__delete__(Dense * self)
-{
-    if(self != NULL)
-    {
-        for(size_t i = 0; i < LAYER(self)->n_neurons; i ++)
-            neuron_delete(self->neurons[i]);
-
-        if(LAYER(self)->output != NULL)
-            free(LAYER(self)->output);
-
-        free(self);
-    }
+    return self->super.gradient;
 }
 
 
 Dense *
 dense_new(
-      size_t n_inputs
-    , size_t n_neurons
-    , Activation activation)
+    size_t inputs
+    , size_t neurons
+    , const Activation activation)
 {
-    
-    size_t parameters = n_inputs + (n_neurons * 2);
-    Dense * self = malloc(sizeof(Dense) + (sizeof(float) * parameters)); 
+    Dense * self = malloc(sizeof(Dense));
 
     if(self != NULL)
     {
-        self->super.forward    = (LayerForward) __forward__;
-        self->super.backward   = (LayerBackward) __backward__;
+        self->super.forward    = (LayerForwardCallback) __forward__;
+        self->super.backward   = (LayerBackwardCallback) __backward__;
+        self->super.delete     = (LayerDeleteCallback) free;
         self->super.activation = activation;
-        self->super.delete     = (LayerDelete) __delete__;
 
-        self->super.n_neurons = n_neurons;
-        self->super.output    = malloc(sizeof(float) * n_neurons);
+        self->inputs  = inputs;
+        self->neurons = neurons;
 
-        srand(time(NULL));
+        self->weight   = malloc(sizeof(float) * neurons * inputs);
+        self->bias     = malloc(sizeof(float) * neurons);
+        self->super.output   = malloc(sizeof(float) * neurons);
+        self->super.gradient = malloc(sizeof(float) * neurons);
 
-        for(size_t i = 0; i < n_neurons; i++)
-        {
-            self->neurons[i] = neuron_new(n_inputs);
+        for(size_t i = 0; i < inputs * neurons; i++)
+            self->weight[i] = rand() / (float)RAND_MAX * 2 - 1;
 
-            self->neurons[i]->bias = ((float) rand()) / ((float)RAND_MAX);
-
-            for(size_t j = 0; j < n_inputs; j ++)
-                self->neurons[i]->weights[j] = ((float) rand()) / ((float)RAND_MAX);
-        }
+        for(size_t i = 0; i < neurons; i++)
+            self->bias[i] = rand() / (float)RAND_MAX * 2 - 1;
     }
 
     return self;
 }
+
 
 

@@ -1,28 +1,31 @@
 #ifndef _DENSE_H_
-#define _DENSE_H_ 
+#define _DENSE_H_
 
 #include "layer.h"
-#include "neuron.h"
-#include "activation.h"
 
 #include <stddef.h>
 
 
-typedef struct 
+typedef struct
 {
     Layer super;
+    
+    size_t inputs;
+    size_t neurons;
 
-    size_t n_inputs;
-    float weights[];
+    float * weight;
+    float * bias;
 }Dense;
 
 
 
 Dense *
 dense_new(
-    size_t n_inputs
-    , size_t n_neurons
-    , Activation activation);
+    size_t inputs
+    , size_t neurons
+    , const Activation activation);
+
+
 
 
 #endif

@@ -1,39 +1,27 @@
 #include "loss.h"
+#include <math.h>
 
 
 static float
 __mse__(
-    size_t length
-    , float * prediction
-    , float * desired_output)
+    float target
+    , float predicted)
 {
-    float error = 0;
-
-    for(size_t i = 0; i < length; i++)
-        error += pow(desired_output - predirction, 2);
-
-    return error/length;
+    return powf(target - predicted, 2); 
 }
 
 
-static float
+static float 
 __mse_prime__(
-    size_t length
-    , float * prediction
-    , float * desired_output)
+    float target
+    , float predicted)
 {
-    float error = 0;
-
-    for(size_t i = 0; i < length; i++)
-        error += desired_output - prediction;
-
-    return 2 * error / length; 
+    return 2.0 * (predicted - target);
 }
 
 
-const Loss mse = 
+const Loss MSE = 
 {
     __mse__
-    , __mse_prime__   
+    , __mse_prime__  
 };
-

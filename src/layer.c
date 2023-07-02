@@ -1,24 +1,30 @@
 #include "layer.h"
+#include <stdlib.h>
 
 
-void
+float *
 layer_forward(
     Layer * self
-    , float * input)
+    , float * X)
 {
     if(self->forward != NULL)
-        self->forward(self, input);
+        return self->forward(self, X);
+    
+    return NULL;
 }
 
 
-void
+float *
 layer_backward(
     Layer * self
-    , float * output_gradient
-    , float rate)
+    , float rate
+    , float * y
+    , float * gradient)
 {
     if(self->backward != NULL)
-        self->backward(self, output_gradient, rate);
+        return self->backward(self, rate, y, gradient);
+    
+    return NULL;
 }
 
 
@@ -28,4 +34,3 @@ layer_delete(Layer * self)
     if(self != NULL && self->delete != NULL)
         self->delete(self);
 }
-

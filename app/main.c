@@ -1,88 +1,116 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include <time.h>
 #include <math.h>
 
-
-float input[][2] = {{0,0}, {0,1}, {1,0}, {1,1}};
-float output[][1] = {{0}, {0}, {0}, {1}};
-
-#define SIZE sizeof(input)/sizeof(input[0])
+#include "../src/loss.h"
+#include "../src/dense.h"
 
 
-float 
-sigmoid(float x)
+#define LAYER_SIZE (sizeof(struct _stack) / sizeof(void*))
+
+
+typedef struct
 {
-    return 1/(1 + expf(-x));
+    Loss loss;
+
+    union
+    {
+        struct _stack
+        {
+            Dense * l1;
+            Dense * l2;
+            Dense * l3;
+        }_stack;
+
+        Layer * iterator[LAYER_SIZE];
+    };
+}Model;
+
+#define Model(...)(Model){.loss=MSE, {._stack = __VA_ARGS__}}
+
+
+static float *
+predict(Model * self, float * X)
+{
+    float * output =  layer_forward(self->iterator[0], X);
+
+    for(size_t i = 1; i < LAYER_SIZE; i++)
+            output = layer_forward(self->iterator[i], output);
+
+    return output;
 }
 
-float 
-relu(float x)
+
+static void
+delete(Model * self)
 {
-    if(x > 0)
-        return x;
-    else
-        return 0;
-}
-
-
-float 
-forward(float in1, float in2, float w1, float w2, float b)
-{
-    return sigmoid((w1*in1) + (w2 * in2) + b);
-}
-
-
-float
-loss(float w1, float w2, float b)
-{
-    float error = 0;
-
-    for(size_t i = 0; i < SIZE; i++)
-        error += powf(output[i][0] - forward(input[i][0], input[i][1], w1, w2, b), 2);
-
-    return error/SIZE;
+    for(size_t i = 0; i < LAYER_SIZE; i++)
+        layer_delete(self->iterator[i]);
 }
 
 
 int
 main(void)
-{   
-    srand(69);
-    
-    float w1 = (float) rand() / (float)RAND_MAX;
-    float w2 = (float) rand() / (float)RAND_MAX;
-    float b  = (float) rand() / (float)RAND_MAX;
+{
+    float X[][2] = {{0,0}, {0, 1}, {1, 0}, {1, 1}};
+    float y[]    = {0, 1, 1, 0};
 
-    printf("w1: %f, w2: %f, b:%f, loss: %f\n", w1, w2, b, loss(w1, w2, b)); 
+    srand(time(NULL));
 
-    float delta = 0.00001;
-    float rate  = 1;
-
-    for(size_t i = 0; i < 3000000; i ++)
-    {
-        float error = loss(w1, w2, b);
+    Model model = 
+        Model(
+            {dense_new(2, 2, ReLU)
+            , dense_new(2, 2, ReLU)
+            , dense_new(2, 1, ReLU)});
  
-        float dw1 = (loss(w1+delta, w2, b) - error) / delta;
-        float dw2 = (loss(w1, w2+delta, b) - error) / delta;
-        float db  = (loss(w1, w2, b+delta) - error) / delta;
+    printf("w1:%f, w2: %f, b: %f\n"
+        , model._stack.l1->weight[0], model._stack.l1->weight[1], model._stack.l1->bias[0]);
 
-        w1 -= rate * dw1;
-        w2 -= rate * dw2;
-        b  -= rate * db; 
+    size_t epochs = 10000;
+    float rate    = 0.1;
 
-        printf("w1: %f, w2: %f, b:%f, loss: %f\n", w1, w2, b, loss(w1, w2, b)); 
-    }
-
-    printf("\n");
-
-    for(float i = 0; i < 2; i ++)
+    for (size_t j = 0; j < epochs; j++) 
     {
-        for(float j = 0; j < 2; j ++)
-            printf("%d | %d = %f\n", (int) i, (int) j, forward(i, j, w1, w2, b));
+        float loss = 0.0;
+        
+        for (size_t i = 0; i < 4; i++) 
+        {
+            // forward propagace
+            float * predicted = predict(&model, X[i]); 
+
+            // Výpočet loss
+            loss += model.loss.accuracy(y[i], predicted[0]);
+            
+            // Backward propagace
+            float output_gradient = model.loss.prime(y[i], predicted[0]);
+            float * gradient = &output_gradient;
+            
+            for(size_t k = LAYER_SIZE; k > 1; k--)
+                gradient = layer_backward(model.iterator[k-1], rate, model.iterator[k-2]->output, gradient);
+
+            gradient = layer_backward(model.iterator[0], rate, X[i], gradient);
+        }
+        
+        if((j % 1000) == 0)
+            printf("Epoch: %zu, w1:%f, w2: %f, b: %f, Loss: %.4f\n"
+                , j, model._stack.l1->weight[0], model._stack.l1->weight[1], model._stack.l1->bias[0], loss/4);
     }
+  
+
+    for(size_t i = 0; i < 4; i++)
+    {
+        float * prediction = predict(&model, X[i]);
+        printf("%d & %d = %f\n", (int) X[i][0], (int) X[i][1], prediction[0]);
+    }
+
+    delete(&model);
+
+    printf("Program exit...\n");
 
     return EXIT_SUCCESS;
 }
+
 
 
 

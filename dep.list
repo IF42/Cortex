@@ -1,11 +1,6 @@
-.cache/main.o: app/main.c app/../src/dense.h app/../src/layer.h \
-  app/../src/activation.h app/../src/neuron.h
+.cache/main.o: app/main.c app/../src/loss.h app/../src/dense.h \
+  app/../src/layer.h app/../src/activation.h
 .cache/activation.o: src/activation.c src/activation.h
-.cache/dense.o: src/dense.c src/dense.h src/layer.h src/activation.h \
-  src/neuron.h
+.cache/dense.o: src/dense.c src/dense.h src/layer.h src/activation.h
 .cache/layer.o: src/layer.c src/layer.h src/activation.h
 .cache/loss.o: src/loss.c src/loss.h
-.cache/model.o: src/model.c src/model.h
-.cache/neuron.o: src/neuron.c src/neuron.h
-.cache/sequential.o: src/sequential.c src/sequential.h src/model.h src/layer.h \
-  src/activation.h
