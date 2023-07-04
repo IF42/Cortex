@@ -37,7 +37,7 @@ __backward__(
         self->super.gradient[i] = gradient;
         
         for (size_t j = 0; j < self->inputs; j++) 
-            self->weight[(i * self->inputs) + j] -= rate * gradient * y[i];
+            self->weight[(i * self->inputs) + j] -= rate * gradient * y[j];
         
         self->bias[i] -= rate * gradient; 
     }
@@ -70,10 +70,10 @@ dense_new(
         self->super.gradient = malloc(sizeof(float) * neurons);
 
         for(size_t i = 0; i < inputs * neurons; i++)
-            self->weight[i] = rand() / (float)RAND_MAX * 2 - 1;
+            self->weight[i] = rand() / (float)RAND_MAX;
 
         for(size_t i = 0; i < neurons; i++)
-            self->bias[i] = rand() / (float)RAND_MAX * 2 - 1;
+            self->bias[i] = rand() / (float)RAND_MAX;
     }
 
     return self;

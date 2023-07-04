@@ -33,10 +33,10 @@ typedef struct
 static float *
 predict(Model * self, float * X)
 {
-    float * output =  layer_forward(self->iterator[0], X);
+    float * output = X; 
 
-    for(size_t i = 1; i < LAYER_SIZE; i++)
-            output = layer_forward(self->iterator[i], output);
+    for(size_t i = 0; i < LAYER_SIZE; i++)
+        output = layer_forward(self->iterator[i], output);
 
     return output;
 }
@@ -60,15 +60,15 @@ main(void)
 
     Model model = 
         Model(
-            {dense_new(2, 2, ReLU)
-            , dense_new(2, 2, ReLU)
-            , dense_new(2, 1, ReLU)});
+            {dense_new(2, 2, TanH)
+            , dense_new(2, 2, TanH)
+            , dense_new(2, 1, TanH)});
  
     printf("w1:%f, w2: %f, b: %f\n"
         , model._stack.l1->weight[0], model._stack.l1->weight[1], model._stack.l1->bias[0]);
 
-    size_t epochs = 10000;
-    float rate    = 0.1;
+    size_t epochs = 100000;
+    float rate    = 0.01;
 
     for (size_t j = 0; j < epochs; j++) 
     {
@@ -84,7 +84,7 @@ main(void)
             
             // Backward propagace
             float output_gradient = model.loss.prime(y[i], predicted[0]);
-            float * gradient = &output_gradient;
+            float * gradient      = &output_gradient;
             
             for(size_t k = LAYER_SIZE; k > 1; k--)
                 gradient = layer_backward(model.iterator[k-1], rate, model.iterator[k-2]->output, gradient);
@@ -93,8 +93,10 @@ main(void)
         }
         
         if((j % 1000) == 0)
+        {
             printf("Epoch: %zu, w1:%f, w2: %f, b: %f, Loss: %.4f\n"
                 , j, model._stack.l1->weight[0], model._stack.l1->weight[1], model._stack.l1->bias[0], loss/4);
+        }
     }
   
 

@@ -15,6 +15,9 @@ MODULES += layer.o
 MODULES += dense.o
 MODULES += activation.o
 MODULES += loss.o
+MODULES += optimizer.o
+MODULES += SGD.o
+MODULES += adam.o
 
 
 OBJ=$(addprefix $(CACHE)/,$(MODULES))
